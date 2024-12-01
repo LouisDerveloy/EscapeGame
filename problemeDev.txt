@@ -1,0 +1,4 @@
+1. Problement de replication. Je set le owner dans le client. Donc ça n'avait pas d'effet sur le server. Ducoup lorsque qu'il recevait le RPC il rejetait la requête car elle venait d'un client avec une connexion valable mais passait par un Acteur qu'il ne lui apartenait pas selon le server
+2. Build post it actor. Premier choix APawn mais changé pour AActor par ce que Possess et obligé d'être répliqué.
+3. Changé AInteractiveActor virtual class pour une Interface qui est plus flexible.
+4. Postit Interactive actor Input system : couldn't desactivate movement and camera rotation at the same time so i switched the mapping context for on without moving input.
