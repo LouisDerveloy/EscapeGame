@@ -27,14 +27,18 @@ public:
 	UFUNCTION()
 	virtual void OnInteract(APawn* Sender) override;
 
+	UFUNCTION()
+	void HolderChanged();
+	
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UFUNCTION(NetMulticast, Reliable)
-	void PickedUpBy(AEscapeGameCharacter* player);
-	void PickedUpBy_Implementation(AEscapeGameCharacter* player);
-
 	UPROPERTY(EditAnywhere, Category=PuzzlePiece)
 	FName Socket_Name;
+
+	UPROPERTY(ReplicatedUsing=HolderChanged ,VisibleAnywhere, Category=PuzzlePiece)
+	AEscapeGameCharacter* Holder;
 };

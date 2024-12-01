@@ -3,23 +3,36 @@
 
 #include "PuzzlePiece.h"
 
+#include "Net/UnrealNetwork.h"
+
 
 // Sets default values
+
 APuzzlePiece::APuzzlePiece()
 {
+	PrimaryActorTick.bCanEverTick = false;
+
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
 	SetRootComponent(Mesh);
-	
+
 	SphereCollisionComp = CreateDefaultSubobject<USphereComponent>("SphereCollision");
 	SphereCollisionComp->SetupAttachment(Mesh);
 
-	
-	PrimaryActorTick.bCanEverTick = false;
+
 	setShouldExecOnServer(true);
 	bReplicates = true;
+	Holder = nullptr;
+}
+
+void APuzzlePiece::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(APuzzlePiece, Holder);
 }
 
 // Called when the game starts or when spawned
+
 void APuzzlePiece::BeginPlay()
 {
 	Super::BeginPlay();
@@ -33,30 +46,32 @@ void APuzzlePiece::OnInteract(APawn* Sender)
 
 	if (AEscapeGameCharacter* player = Cast<AEscapeGameCharacter>(Sender))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Is locally controleld: %s"), player->IsLocallyControlled() ? TEXT("True") : TEXT("False"));
+		UE_LOG(LogTemp, Warning, TEXT("Net Push Id: %d"), player->GetNetPushId());
+		
 		SetOwner(player);
-
-		PickedUpBy(player);
+		Holder = player;
+		HolderChanged();
 	}
 }
 
-void APuzzlePiece::PickedUpBy_Implementation(AEscapeGameCharacter* player)
+void APuzzlePiece::HolderChanged()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Holder Changed OnRep"));
+	
+	if (Holder == nullptr) return;
+
 	FAttachmentTransformRules attachRules = FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true);
 	attachRules.ScaleRule = EAttachmentRule::KeepWorld;
 
-	// The local player only see the arms but the other player see the whole body so we need to adapt wich mesh we use.
+	if (Holder->IsLocallyControlled())
+	{
+		AttachToComponent( Holder->GetMesh1P(), attachRules, Socket_Name);
+	} else
+	{
+		AttachToComponent( Holder->GetMesh(), attachRules, Socket_Name);
+	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Is locally controleld: %s"), player->IsLocallyControlled() ? TEXT("True") : TEXT("False"));
-	UE_LOG(LogTemp, Warning, TEXT("Is locally controleld: %d"), player->GetNetPushId());
-	
-	if (player->IsLocallyControlled())
-	{
-		AttachToComponent( player->GetMesh1P(), attachRules, Socket_Name);
-	}
-	else
-	{
-		AttachToComponent( player->GetMesh(), attachRules, Socket_Name);
-	}
 	Mesh->SetSimulatePhysics(false); // Disable physique to prevent strange comportement
 	SetActorEnableCollision(false);
 }
