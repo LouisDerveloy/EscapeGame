@@ -18,6 +18,7 @@ APuzzlePiece::APuzzlePiece()
 	SphereCollisionComp = CreateDefaultSubobject<USphereComponent>("SphereCollision");
 	SphereCollisionComp->SetupAttachment(Mesh);
 
+	HoldableActorComponent = CreateDefaultSubobject<UHoldableActorComponent>("HoldableActorComponent");
 
 	setShouldExecOnServer(true);
 	bReplicates = true;
@@ -36,7 +37,8 @@ void APuzzlePiece::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 void APuzzlePiece::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	HoldableActorComponent->OnDropDelegate.AddUObject(this, &APuzzlePiece::Dropped);
 }
 
 void APuzzlePiece::OnInteract(APawn* Sender)
@@ -67,6 +69,7 @@ void APuzzlePiece::HolderChanged()
 	if (Holder->IsLocallyControlled())
 	{
 		AttachToComponent( Holder->GetMesh1P(), attachRules, Socket_Name);
+		HoldableActorComponent->PickedUp(Holder);
 	} else
 	{
 		AttachToComponent( Holder->GetMesh(), attachRules, Socket_Name);
@@ -74,4 +77,9 @@ void APuzzlePiece::HolderChanged()
 
 	Mesh->SetSimulatePhysics(false); // Disable physique to prevent strange comportement
 	SetActorEnableCollision(false);
+}
+
+void APuzzlePiece::Dropped()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Dropped()"));
 }
